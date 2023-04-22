@@ -1,0 +1,40 @@
+name: run parser
+
+on:
+  schedule:
+    - cron: "*/59 * * * *"
+
+jobs:
+  parse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo content
+        uses: actions/checkout@v3 # checkout the repository contdent to github runnerd
+
+      - uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.PRIVATE_KEY }}
+
+      - name: setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9" # install the python version needed
+
+      - name: install python packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: execute parsing
+        run: python -m twitter_graphql_parser ${{ secrets.PROXY }}
+      - name: Adding files to git
+        run: git add .
+      - name: Create commit
+        run: |
+          git config --global user.email "meqy1qub@gmail.com"
+          git config --global user.name "paranoikcodit"
+          git commit -m "New queries"
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          ssh: true
+          branch: ${{ github.ref }}
